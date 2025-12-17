@@ -1,0 +1,129 @@
+<!-- ============================================================================ -->
+<!-- STATISTICS TAB HTML - CODE TO ADD TO index.html -->
+<!-- ============================================================================ -->
+<!-- Hướng dẫn: Thêm các đoạn HTML này vào file index.html -->
+<!-- Instruction: Add these HTML sections to index.html -->
+
+<!-- ============================================================================ -->
+<!-- BƯỚC 1: THÊM NÚT THỐNG KÊ VÀO SIDEBAR -->
+<!-- STEP 1: ADD STATISTICS BUTTON TO SIDEBAR -->
+<!-- Thêm vào <aside class="sidebar"> sau các nút khác -->
+<!-- Add to <aside class="sidebar"> after other buttons -->
+<!-- ============================================================================ -->
+
+<button class="tab-btn" id="tab-statistics-btn" onclick="showTab('statistics')" style="display:none">📊 Thống kê</button>
+
+
+<!-- ============================================================================ -->
+<!-- BƯỚC 2: THÊM SECTION THỐNG KÊ VÀO MAIN CONTENT -->
+<!-- STEP 2: ADD STATISTICS SECTION TO MAIN CONTENT -->
+<!-- Thêm vào <main class="main-content"> sau các section khác -->
+<!-- Add to <main class="main-content"> after other sections -->
+<!-- ============================================================================ -->
+
+<!-- TAB: Thống kê -->
+<section id="tab-statistics" class="tab-content">
+    <!-- Bộ lọc thời gian / Date filters -->
+    <div class="panel">
+        <h3>📊 Báo cáo thống kê</h3>
+        <div class="stats-filters">
+            <label>
+                Từ ngày:
+                <input type="date" id="stats-date-from" onchange="refreshAllStatistics()">
+            </label>
+            <label>
+                Đến ngày:
+                <input type="date" id="stats-date-to" onchange="refreshAllStatistics()">
+            </label>
+            <label>
+                Nhóm theo:
+                <select id="stats-group-by" onchange="renderRevenueOverTime()">
+                    <option value="day">Ngày</option>
+                    <option value="month">Tháng</option>
+                    <option value="year">Năm</option>
+                </select>
+            </label>
+            <button class="btn primary" onclick="refreshAllStatistics()">🔄 Làm mới</button>
+            <button class="btn" onclick="exportStatisticsReport()">📄 Xuất báo cáo</button>
+        </div>
+    </div>
+
+    <!-- Tổng quan / Overview -->
+    <div class="panel">
+        <h3>📈 Tổng quan</h3>
+        <div id="statistics-overview-content"></div>
+    </div>
+
+    <!-- Thống kê sản phẩm / Product statistics -->
+    <div class="panel">
+        <h3>🏆 Top sản phẩm bán chạy</h3>
+        <div id="product-stats-content"></div>
+    </div>
+
+    <!-- Doanh thu theo thời gian / Revenue over time -->
+    <div class="panel">
+        <h3>💹 Doanh thu theo thời gian</h3>
+        <div id="revenue-time-content"></div>
+    </div>
+
+    <!-- Thống kê tồn kho / Inventory statistics -->
+    <div class="panel">
+        <h3>📦 Tình trạng tồn kho</h3>
+        <div id="inventory-stats-content"></div>
+    </div>
+
+    <!-- Thống kê nhà cung cấp / Supplier statistics -->
+    <div class="panel">
+        <h3>🏢 Thống kê nhà cung cấp</h3>
+        <div id="supplier-stats-content"></div>
+    </div>
+
+    <!-- Thống kê khách hàng / Customer statistics -->
+    <div class="panel">
+        <h3>👥 Thống kê khách hàng</h3>
+        <div id="customer-stats-content"></div>
+    </div>
+</section>
+
+
+<!-- ============================================================================ -->
+<!-- BƯỚC 3: CẬP NHẬT HÀM showShop() -->
+<!-- STEP 3: UPDATE showShop() FUNCTION -->
+<!-- Thêm code này vào hàm showShop() trong script.js để hiển thị nút thống kê -->
+<!-- Add this code to showShop() function in script.js to show statistics button -->
+<!-- ============================================================================ -->
+
+<!--
+JavaScript code to add to showShop() function:
+
+const tabStatisticsBtn = document.getElementById('tab-statistics-btn');
+
+// Hiển thị tab thống kê cho admin và staff
+if (['admin', 'staff'].includes(role)) {
+    if (tabStatisticsBtn) tabStatisticsBtn.style.display = 'inline-block';
+} else {
+    if (tabStatisticsBtn) tabStatisticsBtn.style.display = 'none';
+}
+-->
+
+
+<!-- ============================================================================ -->
+<!-- BƯỚC 4: CẬP NHẬT HÀM showTab() -->
+<!-- STEP 4: UPDATE showTab() FUNCTION -->
+<!-- Thêm 'statistics' vào danh sách allowed tabs trong hàm showTab() -->
+<!-- Add 'statistics' to allowed tabs list in showTab() function -->
+<!-- ============================================================================ -->
+
+<!--
+JavaScript code to update in showTab() function:
+
+const allowed = (function(r){
+    if (r === 'admin') return ['buy','catalog','warehouse','users','profile','statistics'];
+    if (r === 'staff') return ['buy','catalog','warehouse','profile','statistics'];
+    if (r === 'supplier') return ['warehouse'];
+    return ['buy','profile'];
+})(role);
+
+// Also add this at the end of showTab():
+if (tab === 'statistics') { refreshAllStatistics(); }
+-->
