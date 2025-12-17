@@ -74,6 +74,7 @@
           <button class="tab-btn" id="tab-catalog-btn" onclick="showTab('catalog')" style="display:none">📋 Quản lý danh mục</button>
           <button class="tab-btn" id="tab-warehouse-btn" onclick="showTab('warehouse')" style="display:none">📦 Quản lý kho</button>
           <button class="tab-btn" id="tab-users-btn" onclick="showTab('users')" style="display:none">👥 Quản lý nhân viên</button>
+          <button class="tab-btn" id="tab-statistics-btn" onclick="showTab('statistics')" style="display:none">📊 Báo cáo thống kê</button>
           <button class="tab-btn" onclick="showTab('profile')">⚙️ Đổi thông tin</button>
         </nav>
       </aside>
@@ -200,6 +201,82 @@
           </div>
           <h3>Danh sách nhân viên</h3>
           <table id="users-table" class="data-table" style="width:100%;border-collapse:collapse;"></table>
+        </section>
+
+        <!-- TAB: Statistics -->
+        <section id="tab-statistics" class="tab-content">
+          <h2>📊 Báo cáo thống kê</h2>
+          
+          <!-- Thống kê tổng quan -->
+          <div class="panel">
+            <h3>📈 Tổng quan hệ thống</h3>
+            <div id="stats-overview" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px;">
+              <div class="stat-card">
+                <div class="stat-label">Tổng số sản phẩm</div>
+                <div class="stat-value" id="stat-total-products">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Tổng đơn hàng</div>
+                <div class="stat-value" id="stat-total-orders">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Tổng doanh thu</div>
+                <div class="stat-value" id="stat-total-revenue">0đ</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Sản phẩm đã bán</div>
+                <div class="stat-value" id="stat-total-sold">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phân tích theo nhóm thuốc -->
+          <div class="panel">
+            <h3>💊 Phân tích theo nhóm thuốc</h3>
+            <div id="stats-categories" style="margin-top:12px;"></div>
+          </div>
+
+          <!-- Thống kê bán hàng -->
+          <div class="panel">
+            <h3>🛒 Top sản phẩm bán chạy</h3>
+            <table class="data-table" style="width:100%;margin-top:12px;">
+              <thead>
+                <tr>
+                  <th>STT</th>
+                  <th>Tên sản phẩm</th>
+                  <th>Số lượng bán</th>
+                  <th>Doanh thu</th>
+                </tr>
+              </thead>
+              <tbody id="stats-top-products"></tbody>
+            </table>
+          </div>
+
+          <!-- Thống kê doanh thu theo thời gian -->
+          <div class="panel">
+            <h3>📅 Doanh thu theo thời gian</h3>
+            <div style="display:flex;gap:12px;margin-bottom:12px;align-items:center;">
+              <label>Từ ngày: <input type="date" id="stats-date-from"></label>
+              <label>Đến ngày: <input type="date" id="stats-date-to"></label>
+              <button onclick="filterStatisticsByDate()" class="btn">Lọc</button>
+            </div>
+            <div id="stats-revenue-chart" style="margin-top:12px;"></div>
+          </div>
+
+          <!-- Thống kê tồn kho -->
+          <div class="panel">
+            <h3>📦 Tình trạng tồn kho</h3>
+            <table class="data-table" style="width:100%;margin-top:12px;">
+              <thead>
+                <tr>
+                  <th>Tên sản phẩm</th>
+                  <th>Số lượng trong kho</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="stats-inventory"></tbody>
+            </table>
+          </div>
         </section>
 
         <!-- TAB: Profile -->
