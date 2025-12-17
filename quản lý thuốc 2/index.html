@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Đại Lý Bán Thuốc</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="assets/css/theme.css" />
+  <style>
+    /* Minimal fallback styles to ensure layout works if style.css fails to load */
+    .modal { position:fixed; left:0; right:0; top:0; bottom:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); z-index:60; }
+    .modal-inner { background:#fff; padding:16px; border-radius:8px; max-width:720px; width:100%; max-height:80vh; overflow:auto; box-shadow:0 6px 30px rgba(0,0,0,0.15); }
+    .msg { margin-top:8px; color:#c62828; }
+    .product { background:#fff; padding:12px; margin-bottom:12px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+    .icon-btn { display:inline-flex; gap:8px; align-items:center; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-brand">
+      <h1>Đại Lý Bán Thuốc</h1>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button id="theme-toggle" class="btn" title="Bật/Tắt chế độ tối">🌙</button>
+
+      <div id="user-info" class="header-user" style="display:none; align-items:center;">
+        <span class="muted" style="margin-right:6px">Xin chào,</span>
+        <strong id="current-user" style="margin-right:10px"></strong>
+        <div id="current-role" class="current-role muted" style="margin-right:8px;font-size:0.9rem"></div>
+        <button id="header-logout" class="btn btn-ghost" onclick="logout()">🚪 Đăng xuất</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- AUTH / LOGIN -->
+  <div id="auth-section" class="auth-section">
+    <div id="login-form" class="auth-card">
+      <h3>🔐 Đăng nhập</h3>
+      <input type="text" id="login-identifier" placeholder="Tên đăng nhập hoặc Email">
+      <input type="password" id="login-password" placeholder="Mật khẩu">
+      <div class="auth-actions">
+        <button class="btn" onclick="login()">Đăng nhập</button>
+        <a href="#" onclick="showForgotPassword()" class="link">Quên mật khẩu?</a>
+      </div>
+      <p class="muted">Chưa có tài khoản? <a href="#" onclick="showRegister()">Đăng ký</a></p>
+    </div>
+
+    <div id="register-form" class="auth-card" style="display:none;">
+      <h3>📝 Đăng ký</h3>
+      <input type="text" id="register-username" placeholder="Tên đăng nhập">
+      <input type="email" id="register-email" placeholder="Email">
+      <input type="password" id="register-password" placeholder="Mật khẩu">
+      <select id="register-role" onchange="toggleStaffFields()">
+        <option value="customer">Khách hàng</option>
+        <option value="staff">Nhân viên</option>
+        <option value="supplier">Nhà cung cấp</option>
+      </select>
+      <input id="register-staff-code" placeholder="Mã nhân viên (nếu là NV)" style="display:none;">
+      <input id="register-staff-phone" placeholder="Số điện thoại (nếu là NV)" style="display:none;">
+      <input id="register-company" placeholder="Công ty (nếu là Nhà cung cấp)" style="display:none;">
+      <div class="auth-actions">
+        <button class="btn" onclick="register()">Đăng ký</button>
+        <button class="btn btn-ghost" onclick="showLogin()">Quay lại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION -->
+  <div id="shop-section" class="app-section" style="display:none;">
+    <div class="app-layout">
+      <aside class="sidebar" role="navigation" aria-label="Chức năng chính">
+        <nav>
+          <button class="tab-btn active" onclick="showTab('buy')">🛍️ Mua hàng</button>
+          <button class="tab-btn" id="tab-catalog-btn" onclick="showTab('catalog')" style="display:none">📋 Quản lý danh mục</button>
+          <button class="tab-btn" id="tab-warehouse-btn" onclick="showTab('warehouse')" style="display:none">📦 Quản lý kho</button>
+          <button class="tab-btn" id="tab-users-btn" onclick="showTab('users')" style="display:none">👥 Quản lý nhân viên</button>
+          <button class="tab-btn" onclick="showTab('profile')">⚙️ Đổi thông tin</button>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <!-- TAB: Mua hàng -->
+        <section id="tab-buy" class="tab-content active">
+          <div class="search-row" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="search" placeholder="Tìm thuốc..." oninput="renderProducts()" style="flex:1;min-width:180px;">
+            <label style="display:flex;align-items:center;gap:8px;">
+              <span class="muted" style="font-size:0.95rem">Lọc theo tác dụng:</span>
+              <select id="filter-effect" onchange="renderProducts()" style="min-width:200px;">
+                <option value="all">Tất cả tác dụng</option>
+              </select>
+            </label>
+          </div>
+
+          <!-- Best sellers -->
+          <div class="panel" style="margin-top:8px;">
+            <h3>🔥 Hàng bán chạy</h3>
+            <div id="best-sellers" class="best-sellers" style="display:flex;gap:12px;overflow:auto;padding-top:8px;"></div>
+          </div>
+
+          <div class="products" id="products"></div>
+
+          <h2>🧾 Giỏ Hàng</h2>
+          <ul id="cart" class="cart-list"></ul>
+          <p id="total" class="total-price"></p>
+          <button onclick="checkout()" id="checkout-btn" class="btn primary">💳 Thanh toán</button>
+          <div id="notification" class="msg"></div>
+
+          <div id="invoice-panel" class="panel">
+            <h3>Hóa đơn của bạn</h3>
+            <div id="invoice-list"></div>
+          </div>
+        </section>
+
+        <!-- TAB: Quản lý danh mục -->
+        <section id="tab-catalog" class="tab-content">
+          <div id="admin-panel" class="panel">
+            <h3>➕ Thêm thuốc vào danh mục</h3>
+            <input id="new-name" placeholder="Tên thuốc">
+            <input id="new-price" type="number" placeholder="Giá">
+            <input id="new-qty" type="number" placeholder="Số lượng (hiển thị)">
+            <input id="new-desc" placeholder="Công dụng">
+            <input id="new-img" placeholder="Link ảnh">
+            <button onclick="addNewProduct()" class="btn">Thêm thuốc</button>
+            <div id="admin-notification" class="msg"></div>
+          </div>
+
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;">
+            <label class="muted">Lọc theo tác dụng:</label>
+            <select id="filter-effect-catalog" onchange="renderProductsAdmin()" style="min-width:220px;">
+              <option value="all">Tất cả tác dụng</option>
+            </select>
+          </div>
+
+          <h3>📦 Danh sách thuốc</h3>
+          <div class="products" id="products-admin"></div>
+
+          <h3>Tồn kho </h3>
+          <div id="inventory-panel" class="panel">
+            <table id="inventory-table" border="1" style="width:100%;border-collapse:collapse;"></table>
+          </div>
+        </section>
+
+        <!-- TAB: Quản lý kho -->
+        <section id="tab-warehouse" class="tab-content">
+          <h3>📦 Quản lý kho</h3>
+
+          <div id="receipt-panel" class="panel">
+            <h4>Phiếu nhập kho</h4>
+            <div id="receipt-controls" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+              <label>Nhà cung cấp:
+                <select id="receipt-supplier-select"></select>
+              </label>
+              <label class="muted">Thời gian: <span id="receipt-date"></span></label>
+            </div>
+
+            <div id="receipt-item-form" class="flex-row" style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+              <input id="receipt-item-name" placeholder="Tên thuốc" style="flex:1;">
+              <input id="receipt-item-qty" type="number" placeholder="Số lượng" min="1" style="width:120px;">
+              <button onclick="addReceiptItem()" class="btn">➕ Thêm vào phiếu</button>
+            </div>
+
+            <div id="receipt-items-list" style="margin-top:10px;"></div>
+
+            <div class="flex-row" style="margin-top:12px;">
+              <button onclick="createReceipt()" id="create-receipt-btn" class="btn primary">✅ Tạo phiếu nhập kho</button>
+              <button onclick="clearCurrentReceipt()" id="clear-receipt-btn" class="btn btn-ghost">🗑️ Hủy phiếu</button>
+            </div>
+            <div id="receipt-notification" class="msg"></div>
+          </div>
+
+          <h4>Nhập kho thủ công (chỉ Admin/Staff)</h4>
+          <div id="add-stock-panel" class="panel">
+            <input id="stock-name" placeholder="Tên thuốc (phải giống tên trong danh sách hoặc thêm mới)">
+            <input id="stock-qty" type="number" placeholder="Số lượng nhập" min="0">
+            <button onclick="addStockItem()" class="btn">➕ Nhập kho</button>
+            <div id="warehouse-notification" class="msg"></div>
+          </div>
+
+          <h4>Danh sách hàng trong kho</h4>
+          <table id="warehouse-table" class="data-table" style="width:100%;border-collapse:collapse;">
+            <thead><tr><th>#</th><th>Tên thuốc</th><th>Số lượng</th><th>Hành động</th></tr></thead>
+            <tbody></tbody>
+          </table>
+
+          <h4>Phiếu nhập kho đã tạo</h4>
+          <div id="warehouse-receipts-list"></div>
+        </section>
+
+        <!-- TAB: Quản lý nhân viên -->
+        <section id="tab-users" class="tab-content">
+          <div id="admin-panel-users" class="panel">
+            <h3>👥 Quản lý nhân viên</h3>
+            <div id="add-staffcode-panel" style="display:none;">
+              <input id="new-staff-code" placeholder="Thêm mã nhân viên hợp lệ">
+              <button onclick="addStaffCode()" class="btn">Thêm mã</button>
+              <div id="staffcode-notification" class="msg"></div>
+            </div>
+            <button onclick="showAddStaffModal()" class="btn">➕ Thêm nhân viên</button>
+            <div id="user-notification" class="msg"></div>
+          </div>
+          <h3>Danh sách nhân viên</h3>
+          <table id="users-table" class="data-table" style="width:100%;border-collapse:collapse;"></table>
+        </section>
+
+        <!-- TAB: Profile -->
+        <section id="tab-profile" class="tab-content">
+          <div id="profile-panel" class="panel">
+            <h3>⚙️ Thay đổi thông tin đăng nhập</h3>
+            <input type="text" id="profile-username" placeholder="Tên đăng nhập mới">
+            <input type="email" id="profile-email" placeholder="Email mới">
+            <input type="text" id="profile-company" placeholder="Công ty (nếu là Nhà cung cấp)" style="display:none;">
+            <input type="password" id="profile-old-password" placeholder="Mật khẩu cũ">
+            <input type="password" id="profile-new-password" placeholder="Mật khẩu mới (nếu đổi)">
+            <input type="password" id="profile-new-password2" placeholder="Nhập lại mật khẩu mới">
+            <button onclick="changeProfile()" class="btn">Cập nhật thông tin</button>
+            <div id="profile-notification" class="msg"></div>
+          </div>
+        </section>
+
+        <!-- MODALS -->
+        <div id="modal-invoice" class="modal" style="display:none;">
+          <div class="modal-inner">
+            <button class="modal-close" onclick="closeInvoiceModal()">Đóng</button>
+            <div id="modal-invoice-content"></div>
+            <div style="margin-top:12px;">
+              <button id="btn-print-invoice" onclick="printInvoice()" style="display:none" class="btn">🖨️ In hóa đơn</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="modal-forgot" class="modal" style="display:none;">
+          <div class="modal-inner">
+            <button class="modal-close" onclick="closeForgotModal()">Đóng</button>
+            <h3>Yêu cầu đặt lại mật khẩu</h3>
+            <input id="forgot-email" placeholder="Email đăng ký">
+            <div id="forgot-notice" class="msg"></div>
+            <div id="forgot-simulated-code" style="margin-top:8px;color:#999;"></div>
+            <button onclick="requestPasswordReset()" class="btn">Gửi mã (mô phỏng)</button>
+          </div>
+        </div>
+
+        <div id="modal-reset" class="modal" style="display:none;">
+          <div class="modal-inner">
+            <button class="modal-close" onclick="closeResetModal()">Đóng</button>
+            <h3>Đặt lại mật khẩu</h3>
+            <input id="reset-email" placeholder="Email">
+            <input id="reset-code" placeholder="Mã xác thực">
+            <input id="reset-password" type="password" placeholder="Mật khẩu mới">
+            <input id="reset-password-confirm" type="password" placeholder="Nhập lại mật khẩu mới">
+            <div id="reset-notice" class="msg"></div>
+            <button onclick="performPasswordReset()" class="btn">Đặt lại</button>
+          </div>
+        </div>
+
+        <div id="modal-addstaff" class="modal" style="display:none;">
+          <div class="modal-inner">
+            <button class="modal-close" onclick="closeAddStaffModal()">Đóng</button>
+            <h3>Thêm nhân viên</h3>
+            <input id="addstaff-username" placeholder="Tên đăng nhập">
+            <input id="addstaff-email" placeholder="Email">
+            <input id="addstaff-password" placeholder="Mật khẩu">
+            <input id="addstaff-staffcode" placeholder="Mã NV">
+            <input id="addstaff-phone" placeholder="SĐT">
+            <div id="addstaff-notification" class="msg"></div>
+            <button onclick="addStaffUser()" class="btn">Thêm</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

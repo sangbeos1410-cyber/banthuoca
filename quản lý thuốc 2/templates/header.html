@@ -1,0 +1,24 @@
+<!-- templates/header.html -->
+<header class="site-header">
+  <div class="site-brand">
+    <a href="/" style="text-decoration:none;color:inherit;">
+      <div class="logo">BT</div>
+    </a>
+    <div>
+      <h1 class="site-title">BanThuoc</h1>
+      <div class="site-sub">Cổng thông tin thuốc</div>
+    </div>
+  </div>
+
+  <nav class="site-nav" aria-label="Main navigation">
+    <a href="/">Trang chủ</a>
+    <a href="/thuoc.html">Thuốc</a>
+    <a href="/lien-he.html">Liên hệ</a>
+  </nav>
+
+  <div id="header-auth" style="display:none; margin-left:16px; align-items:center;">
+    <span style="color:var(--muted); margin-right:8px;">Xin chào,</span>
+    <strong id="header-current-user" style="margin-right:8px;color:var(--text)"></strong>
+    <button id="logout-button" class="btn small" onclick="logout()">Đăng xuất</button>
+  </div>
+</header>
