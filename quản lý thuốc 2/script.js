@@ -381,12 +381,14 @@ function showShop() {
     const tabCatalogBtn = document.getElementById('tab-catalog-btn');
     const tabWarehouseBtn = document.getElementById('tab-warehouse-btn');
     const tabUsersBtn = document.getElementById('tab-users-btn');
+    const tabStatisticsBtn = document.getElementById('tab-statistics-btn');
 
     if (adminPanel) adminPanel.style.display = 'none';
     if (addStaffcodePanel) addStaffcodePanel.style.display = 'none';
     if (tabCatalogBtn) tabCatalogBtn.style.display = 'none';
     if (tabWarehouseBtn) tabWarehouseBtn.style.display = 'none';
     if (tabUsersBtn) tabUsersBtn.style.display = 'none';
+    if (tabStatisticsBtn) tabStatisticsBtn.style.display = 'none';
 
     if (role === 'admin') {
         if (adminPanel) adminPanel.style.display = 'block';
@@ -394,11 +396,13 @@ function showShop() {
         if (tabCatalogBtn) tabCatalogBtn.style.display = 'inline-block';
         if (tabWarehouseBtn) tabWarehouseBtn.style.display = 'inline-block';
         if (tabUsersBtn) tabUsersBtn.style.display = 'inline-block';
+        if (tabStatisticsBtn) tabStatisticsBtn.style.display = 'inline-block';
         renderStaffCodeList();
     } else if (role === 'staff') {
         if (adminPanel) adminPanel.style.display = 'block';
         if (tabCatalogBtn) tabCatalogBtn.style.display = 'inline-block';
         if (tabWarehouseBtn) tabWarehouseBtn.style.display = 'inline-block';
+        if (tabStatisticsBtn) tabStatisticsBtn.style.display = 'inline-block';
     } else if (role === 'supplier') {
         if (tabWarehouseBtn) tabWarehouseBtn.style.display = 'inline-block';
     }
@@ -426,8 +430,8 @@ function showShop() {
 function showTab(tab) {
     const role = getCurrentRole();
     const allowed = (function(r){
-        if (r === 'admin') return ['buy','catalog','warehouse','users','profile'];
-        if (r === 'staff') return ['buy','catalog','warehouse','profile'];
+        if (r === 'admin') return ['buy','catalog','warehouse','users','statistics','profile'];
+        if (r === 'staff') return ['buy','catalog','warehouse','statistics','profile'];
         if (r === 'supplier') return ['warehouse'];
         return ['buy','profile'];
     })(role);
@@ -445,6 +449,7 @@ function showTab(tab) {
     if (tab === 'catalog') { renderProducts(); renderInventory(); renderStaffCodeList(); renderReport(); renderProductsAdmin(); }
     if (tab === 'buy') { renderProducts(); renderCart(); renderInvoices(); renderBestSellers(); }
     if (tab === 'users') renderUsersTable();
+    if (tab === 'statistics') renderStatistics();
     if (tab === 'profile') fillProfileForm();
     if (tab === 'warehouse') { renderWarehouse(); renderReceipts(); renderCurrentReceiptItems(); }
 }
@@ -1134,6 +1139,220 @@ function changeProfile() {
     setUsers(users);
     setCurrentUser(username);
     if (notifyEl) { notifyEl.style.color = '#43a047'; notifyEl.textContent = 'Cập nhật thành công!'; setTimeout(()=>{ notifyEl.textContent = ''; }, 2000); }
+}
+
+// --- Statistics / Reporting ---
+function renderStatistics() {
+    renderOverviewStats();
+    renderCategoryAnalysis();
+    renderTopProducts();
+    renderRevenueChart();
+    renderInventoryStatus();
+}
+
+function renderOverviewStats() {
+    const products = getProductsList();
+    const invoices = getInvoices();
+    const warehouse = getWarehouseStock();
+    
+    // Total products
+    const totalProducts = products.length;
+    document.getElementById('stat-total-products').textContent = totalProducts;
+    
+    // Total orders
+    const totalOrders = invoices.length;
+    document.getElementById('stat-total-orders').textContent = totalOrders;
+    
+    // Total revenue and products sold
+    let totalRevenue = 0;
+    let totalSold = 0;
+    invoices.forEach(inv => {
+        inv.items.forEach(item => {
+            totalRevenue += item.price * item.qty;
+            totalSold += item.qty;
+        });
+    });
+    document.getElementById('stat-total-revenue').textContent = totalRevenue.toLocaleString() + 'đ';
+    document.getElementById('stat-total-sold').textContent = totalSold;
+}
+
+function renderCategoryAnalysis() {
+    const products = getProductsList();
+    const container = document.getElementById('stats-categories');
+    if (!container) return;
+    
+    // Group products by their effects/categories
+    const categoryMap = {};
+    products.forEach(p => {
+        const effects = extractKeywords(p.desc);
+        effects.forEach(effect => {
+            if (!categoryMap[effect]) {
+                categoryMap[effect] = { count: 0, products: [] };
+            }
+            categoryMap[effect].count++;
+            categoryMap[effect].products.push(p.name);
+        });
+    });
+    
+    const categories = Object.entries(categoryMap)
+        .map(([name, data]) => ({ name, count: data.count, products: data.products }))
+        .sort((a, b) => b.count - a.count);
+    
+    if (categories.length === 0) {
+        container.innerHTML = '<p class="muted">Chưa có dữ liệu phân loại</p>';
+        return;
+    }
+    
+    const maxCount = categories[0].count;
+    container.innerHTML = categories.map(cat => {
+        const percentage = (cat.count / maxCount) * 100;
+        return `
+            <div class="category-bar">
+                <div class="category-name">${capitalize(cat.name)}</div>
+                <div class="category-progress">
+                    <div class="category-progress-bar" style="width: ${percentage}%">
+                        ${cat.count} sản phẩm
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderTopProducts() {
+    const tbody = document.getElementById('stats-top-products');
+    if (!tbody) return;
+    
+    const invoices = getInvoices();
+    const productStats = {};
+    
+    invoices.forEach(inv => {
+        inv.items.forEach(item => {
+            if (!productStats[item.name]) {
+                productStats[item.name] = { qty: 0, revenue: 0 };
+            }
+            productStats[item.name].qty += item.qty;
+            productStats[item.name].revenue += item.price * item.qty;
+        });
+    });
+    
+    const topProducts = Object.entries(productStats)
+        .map(([name, stats]) => ({ name, ...stats }))
+        .sort((a, b) => b.qty - a.qty)
+        .slice(0, 10);
+    
+    if (topProducts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="muted">Chưa có dữ liệu bán hàng</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = topProducts.map((p, idx) => `
+        <tr>
+            <td>${idx + 1}</td>
+            <td>${escapeHtml(p.name)}</td>
+            <td>${p.qty}</td>
+            <td>${p.revenue.toLocaleString()}đ</td>
+        </tr>
+    `).join('');
+}
+
+function renderRevenueChart(fromDate = null, toDate = null) {
+    const container = document.getElementById('stats-revenue-chart');
+    if (!container) return;
+    
+    const invoices = getInvoices();
+    let filtered = invoices;
+    
+    // Filter by date if provided
+    if (fromDate) {
+        const from = new Date(fromDate);
+        filtered = filtered.filter(inv => new Date(inv.time) >= from);
+    }
+    if (toDate) {
+        const to = new Date(toDate);
+        to.setDate(to.getDate() + 1);
+        filtered = filtered.filter(inv => new Date(inv.time) < to);
+    }
+    
+    // Group by date
+    const revenueByDate = {};
+    filtered.forEach(inv => {
+        const date = new Date(inv.time).toLocaleDateString('vi-VN');
+        if (!revenueByDate[date]) {
+            revenueByDate[date] = 0;
+        }
+        inv.items.forEach(item => {
+            revenueByDate[date] += item.price * item.qty;
+        });
+    });
+    
+    const dateEntries = Object.entries(revenueByDate)
+        .sort((a, b) => new Date(a[0]) - new Date(b[0]));
+    
+    if (dateEntries.length === 0) {
+        container.innerHTML = '<p class="muted">Chưa có dữ liệu doanh thu trong khoảng thời gian này</p>';
+        return;
+    }
+    
+    const maxRevenue = Math.max(...dateEntries.map(([_, rev]) => rev));
+    container.innerHTML = dateEntries.map(([date, revenue]) => {
+        const percentage = (revenue / maxRevenue) * 100;
+        return `
+            <div class="revenue-chart-bar">
+                <div class="revenue-date">${date}</div>
+                <div class="revenue-bar-container">
+                    <div class="revenue-bar" style="width: ${percentage}%">
+                        ${revenue.toLocaleString()}đ
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterStatisticsByDate() {
+    const fromDate = document.getElementById('stats-date-from').value;
+    const toDate = document.getElementById('stats-date-to').value;
+    renderRevenueChart(fromDate, toDate);
+}
+
+function renderInventoryStatus() {
+    const tbody = document.getElementById('stats-inventory');
+    if (!tbody) return;
+    
+    const warehouse = getWarehouseStock();
+    
+    if (warehouse.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="muted">Chưa có dữ liệu tồn kho</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = warehouse.map(item => {
+        let status = '';
+        let statusClass = '';
+        
+        if (item.qty === 0) {
+            status = 'Hết hàng';
+            statusClass = 'inventory-status-low';
+        } else if (item.qty < 10) {
+            status = 'Sắp hết';
+            statusClass = 'inventory-status-low';
+        } else if (item.qty < 30) {
+            status = 'Trung bình';
+            statusClass = 'inventory-status-medium';
+        } else {
+            status = 'Đầy đủ';
+            statusClass = 'inventory-status-good';
+        }
+        
+        return `
+            <tr>
+                <td>${escapeHtml(item.name)}</td>
+                <td>${item.qty}</td>
+                <td class="${statusClass}">${status}</td>
+            </tr>
+        `;
+    }).join('');
 }
 
 // --- Initial render & boot ---
